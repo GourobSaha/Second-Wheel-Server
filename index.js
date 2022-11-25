@@ -12,13 +12,14 @@ app.use(express.json());
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.swsfudh.mongodb.net/?retryWrites=true&w=majority`;
-console.log(uri);
+// console.log(uri);
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 async function run() {
     try {
         const categoriesCollection = client.db('secondWheel').collection('categoriesCollection');
         const carsCollection = client.db('secondWheel').collection('cars');
+        const bookingsCollection = client.db('secondWheel').collection('bookings');
 
         app.get('/categories', async (req, res) => {
             const query = {};
@@ -37,7 +38,20 @@ async function run() {
             const query = { category_id: id };
             const options = await carsCollection.find(query).toArray();
             res.send(options);
-        })
+        });
+
+        app.get('/bookings', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const bookings = await bookingsCollection.find(query).toArray();
+            res.send(bookings);
+        });
+
+        app.post('/bookings', async (req, res) => {
+            const booking = req.body;
+            const result = await bookingsCollection.insertOne(booking);
+            res.send(result);
+        });
     }
     finally { }
 }
