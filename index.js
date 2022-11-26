@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 const port = process.env.PORT || 5000;
 
@@ -38,6 +38,17 @@ async function run() {
         const carsCollection = client.db('secondWheel').collection('cars');
         const bookingsCollection = client.db('secondWheel').collection('bookings');
         const usersCollection = client.db('secondWheel').collection('users');
+
+        const verifyAdmin = async (req, res, next) => {
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollection.findOne(query);
+
+            if (user?.role !== 'Admin') {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+            next();
+        }
 
         app.get('/categories', async (req, res) => {
             const query = {};
@@ -81,6 +92,13 @@ async function run() {
             res.status(403).send({ accessToken: '' });
         });
 
+        app.get('/users', async (req, res) => {
+            const role = req.query.role;
+            const query = { role: role };
+            const bookings = await usersCollection.find(query).toArray();
+            res.send(bookings);
+        });
+
         app.post('/bookings', async (req, res) => {
             const booking = req.body;
             const result = await bookingsCollection.insertOne(booking);
@@ -89,9 +107,30 @@ async function run() {
 
         app.post('/users', async (req, res) => {
             const user = req.body;
+            const query = {
+                email: user.email
+            }
+            const alreadyUser = await usersCollection.find(query).toArray();
+            if (alreadyUser.length) {
+                return res.send({ acknowledged: false })
+            }
             const result = await usersCollection.insertOne(user);
             res.send(result);
         });
+
+        app.put('/users/buyers/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const options = { upsert: true }
+            const updatedDoc = {
+                $set: {
+                    verified: true
+                }
+            }
+            const result = await usersCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        })
+
     }
     finally { }
 }
