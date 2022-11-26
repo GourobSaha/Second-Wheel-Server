@@ -56,17 +56,39 @@ async function run() {
             res.send(options);
         });
 
-        app.get('/cars', async (req, res) => {
-            const query = {};
-            const options = await carsCollection.find(query).toArray();
-            res.send(options);
-        });
 
         app.get('/categories/:id', async (req, res) => {
             const id = req.params.id;
             const query = { category_id: id };
             const options = await carsCollection.find(query).toArray();
             res.send(options);
+        });
+
+        app.get('/cars', async (req, res) => {
+            const query = {};
+            const options = await carsCollection.find(query).toArray();
+            res.send(options);
+        });
+
+        app.get('/allcars', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const options = { upsert: true }
+            const updatedDoc = {
+                $set: {
+
+                    isVerified: true
+
+                }
+            }
+            const result = await carsCollection.updateMany(query, updatedDoc, options);
+            res.send(result);
+        });
+
+        app.post('/cars', async (req, res) => {
+            const query = req.body;
+            const result = await carsCollection.insertOne(query);
+            res.send(result);
         });
 
         app.get('/bookings', verifyJWT, async (req, res) => {
@@ -99,6 +121,13 @@ async function run() {
             res.send(bookings);
         });
 
+        app.get('/seller', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const user = await usersCollection.find(query).toArray();
+            res.send(user);
+        });
+
         app.get('/users/admin/:email', async (req, res) => {
             const email = req.params.email;
             const query = { email }
@@ -111,7 +140,14 @@ async function run() {
             const query = { email }
             const user = await usersCollection.findOne(query);
             res.send({ isSeller: user?.role === 'Seller' });
-        })
+        });
+
+        app.get('/users/buyer/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email }
+            const user = await usersCollection.findOne(query);
+            res.send({ isBuyer: user?.role === 'Buyer' });
+        });
 
 
         app.post('/bookings', async (req, res) => {
