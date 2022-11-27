@@ -116,6 +116,65 @@ async function run() {
             res.send(result);
         });
 
+        app.get('/carstatus/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const options = { upsert: true }
+            const updatedDoc = {
+                $set: {
+                    advertise: false,
+                    soldOut: true
+
+                }
+            }
+            const result = await carsCollection.updateOne(query, updatedDoc, options);
+            res.send(result);
+        });
+
+        app.get('/advertise/:id', async (req, res) => {
+            const date = new Date();
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const options = { upsert: true }
+            const updatedDoc = {
+                $set: {
+
+                    advertise: true,
+                    advertiseDate: date
+
+
+                }
+            }
+            const result = await carsCollection.updateOne(query, updatedDoc, options);
+            res.send(result);
+        });
+        app.get('/reportedcars/:id', async (req, res) => {
+            const date = new Date();
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const options = { upsert: true }
+            const updatedDoc = {
+                $set: {
+
+                    reported: true
+
+                }
+            }
+            const result = await carsCollection.updateOne(query, updatedDoc, options);
+            res.send(result);
+        });
+
+        app.get('/reported', async (req, res) => {
+            const query = { reported: true }
+            const products = await carsCollection.find(query).toArray();
+            res.send(products)
+        });
+        app.get('/advertisedcars', async (req, res) => {
+            const query = {}
+            const products = await carsCollection.find(query).sort({ advertiseDate: -1 }).limit(1).toArray();
+            res.send(products)
+        });
+
         app.post('/create-payment-intent', async (req, res) => {
             const booking = req.body;
             const price = parseInt(booking.resaleValue);
