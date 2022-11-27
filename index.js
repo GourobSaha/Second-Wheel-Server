@@ -314,6 +314,12 @@ async function run() {
             const result = await usersCollection.deleteOne(filter);
             res.send(result);
         })
+        app.delete('/report/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const result = await carsCollection.deleteOne(filter);
+            res.send(result);
+        })
         app.delete('/product/:id', verifyJWT, verifySeller, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) }
